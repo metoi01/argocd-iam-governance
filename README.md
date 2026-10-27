@@ -115,7 +115,7 @@ Windows (PowerShell):
 ```powershell
 $r = Invoke-RestMethod -Method Post -Uri http://localhost:8080/api/v1/auth/login -ContentType 'application/json' -Body '{"username":"oscar","password":"ArgoDemo!2026"}'
 $t = Invoke-RestMethod -Method Post -Uri http://localhost:8080/api/v1/auth/mfa -ContentType 'application/json' -Body (@{challenge_token=$r.challenge_token; code=(.venv\Scripts\python -m argo_iam totp oscar)} | ConvertTo-Json)
-Invoke-RestMethod -Uri http://localhost:8080/api/v1/applications -Headers @{Authorization="Bearer $($t.token)"}
+Invoke-RestMethod -Uri http://localhost:8080/api/v1/applications -Headers @{Authorization="Bearer $($t.session_token)"}
 ```
 
 | Method & path | Purpose |
