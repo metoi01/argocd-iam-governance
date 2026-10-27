@@ -1,20 +1,25 @@
 {% extends "base.html" %}
 {% block title %}Set up MFA{% endblock %}
 {% block auth %}
+{% set step = 2 %}{% include "auth/_stepper.html" %}
 <h2>Set up your authenticator</h2>
-<p class="muted">Hi {{ user.display_name }} — multi-factor authentication is required for every account.</p>
+<p class="lead">Hi {{ user.display_name }} — multi-factor authentication is required for every account.</p>
 {% if error %}<div class="alert alert-error" role="alert">{{ error }}</div>{% endif %}
 <ol class="steps">
   <li>Scan the QR code with an authenticator app (Google Authenticator, Microsoft Authenticator, 1Password…).</li>
-  <li>Or type the key manually: <code class="secret">{{ secret }}</code></li>
+  <li>Or type the key manually.</li>
   <li>Enter the 6-digit code the app shows to confirm.</li>
 </ol>
-{% if qr_svg %}<div class="qr">{{ qr_svg|safe }}</div>{% endif %}
+<div class="enroll">
+  {% if qr_svg %}<div class="enroll-qr"><div class="qr">{{ qr_svg|safe }}</div></div>{% endif %}
+  <div class="enroll-key">Manual key<code class="secret">{{ secret }}</code></div>
+</div>
 <form method="post" action="{{ url_for('auth.enroll') }}" class="stack">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <label>Confirmation code
     <input name="code" class="otp" inputmode="numeric" pattern="[0-9 ]{6,7}" maxlength="7"
-           autocomplete="one-time-code" required autofocus placeholder="123 456">
+           autocomplete="one-time-code" required autofocus placeholder="123 456"
+           {% if error %}aria-invalid="true"{% endif %}>
   </label>
   <button class="btn btn-block" type="submit">Enable MFA and sign in</button>
 </form>
