@@ -32,12 +32,25 @@ PlantUML diagrams: [`docs/diagrams/`](docs/diagrams/)
 
 ## Quick start
 
-Requires Python 3.9+.
+Requires Python 3.9+ built against OpenSSL with `hashlib.scrypt` (python.org
+and Homebrew builds; the macOS system Python 3.9 has no scrypt). Commands
+below use the virtual environment's interpreter directly, so nothing needs
+activating.
+
+macOS / Linux:
 
 ```bash
 python3 -m venv .venv
-.venv/bin/pip install -r requirements-dev.txt
+.venv/bin/python -m pip install -r requirements-dev.txt
 .venv/bin/python -m argo_iam run --seed
+```
+
+Windows (PowerShell):
+
+```powershell
+py -3 -m venv .venv
+.venv\Scripts\python -m pip install -r requirements-dev.txt
+.venv\Scripts\python -m argo_iam run --seed
 ```
 
 Open <http://127.0.0.1:8080>. `--seed` creates the demo users below (once).
@@ -61,6 +74,10 @@ the code their authenticator would show:
 .venv/bin/python -m argo_iam totp oscar
 ```
 
+```powershell
+.venv\Scripts\python -m argo_iam totp oscar
+```
+
 ### Five-minute demo script
 
 1. Sign in as **oscar** (password + `totp oscar`). On *Applications*, the
@@ -78,7 +95,7 @@ the code their authenticator would show:
 
 ## JSON API
 
-The IAM Gateway API mirrors the UI for CLI and CI use:
+The IAM Gateway API mirrors the UI for CLI and CI use. macOS / Linux:
 
 ```bash
 # 1. password step -> challenge
@@ -91,6 +108,14 @@ curl -s -X POST localhost:8080/api/v1/auth/mfa \
   -d '{"challenge_token":"<challenge>","code":"<totp>"}'
 # 3. use it
 curl -s localhost:8080/api/v1/applications -H 'Authorization: Bearer <token>'
+```
+
+Windows (PowerShell):
+
+```powershell
+$r = Invoke-RestMethod -Method Post -Uri http://localhost:8080/api/v1/auth/login -ContentType 'application/json' -Body '{"username":"oscar","password":"ArgoDemo!2026"}'
+$t = Invoke-RestMethod -Method Post -Uri http://localhost:8080/api/v1/auth/mfa -ContentType 'application/json' -Body (@{challenge_token=$r.challenge_token; code=(.venv\Scripts\python -m argo_iam totp oscar)} | ConvertTo-Json)
+Invoke-RestMethod -Uri http://localhost:8080/api/v1/applications -Headers @{Authorization="Bearer $($t.token)"}
 ```
 
 | Method & path | Purpose |
@@ -116,12 +141,30 @@ curl -s localhost:8080/api/v1/applications -H 'Authorization: Bearer <token>'
 | `ARGO_IAM_ARGOCD_MODE` | `mock` | `http` to use a real Argo CD |
 | `ARGOCD_SERVER_URL` / `ARGOCD_AUTH_TOKEN` / `ARGOCD_VERIFY_TLS` | — | real Argo CD API and service-account token |
 
-Other commands:
+Set a variable for the current shell session, then start the server:
+
+```bash
+export ARGO_IAM_DB=/path/to/argo_iam.sqlite3
+```
+
+```powershell
+$env:ARGO_IAM_DB = "C:\path\to\argo_iam.sqlite3"
+```
+
+Other commands (macOS / Linux):
 
 ```bash
 .venv/bin/python -m argo_iam policy          # print generated Argo CD policy.csv
 .venv/bin/python -m argo_iam verify-audit    # verify the audit hash chain
 .venv/bin/python -m argo_iam create-admin bob --email bob@example.com
+```
+
+Other commands (Windows PowerShell):
+
+```powershell
+.venv\Scripts\python -m argo_iam policy          # print generated Argo CD policy.csv
+.venv\Scripts\python -m argo_iam verify-audit    # verify the audit hash chain
+.venv\Scripts\python -m argo_iam create-admin bob --email bob@example.com
 ```
 
 ## Project structure
@@ -145,6 +188,10 @@ tests/             unit, integration, web, API and architecture-conformance test
 
 ```bash
 .venv/bin/python -m pytest
+```
+
+```powershell
+.venv\Scripts\python -m pytest
 ```
 
 The suite covers the RFC 6238 test vectors, every login/lockout/MFA path,
