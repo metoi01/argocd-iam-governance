@@ -129,9 +129,11 @@ def applications():
 @login_required
 def sync(name):
     data = request.get_json(silent=True) or {}
+    dry_run = data.get("dry_run", False)
+    if not isinstance(dry_run, bool):
+        raise ValidationError("'dry_run' must be true or false.")
     result = container().argocd.sync(
-        g.user, name, request_context(), revision=data.get("revision"),
-        dry_run=bool(data.get("dry_run", False)),
+        g.user, name, request_context(), revision=data.get("revision"), dry_run=dry_run,
     )
     return jsonify(application=result.application, revision=result.revision,
                    phase=result.phase, message=result.message, dry_run=result.dry_run)
@@ -155,9 +157,11 @@ def list_requests():
 @login_required
 def create_request():
     data = _body()
+    duration = data.get("duration_minutes", 0)
     try:
         role = Role(str(data.get("role", "")))
-        duration = int(data.get("duration_minutes", 0))
+        if isinstance(duration, bool) or not isinstance(duration, int):
+            raise ValueError(duration)
     except ValueError:
         raise ValidationError("'role' must be viewer/operator/admin and "
                               "'duration_minutes' an integer.")
@@ -191,8 +195,11 @@ def decide(request_id, decision):
 @permission_required(Permission.AUDIT_READ)
 def audit():
     a = request.args
+    limit = a.get("limit", "100")
+    if not (limit.isascii() and limit.isdigit() and 1 <= int(limit) <= 1000):
+        raise ValidationError("'limit' must be an integer between 1 and 1000.")
     q = AuditQuery(event_type=a.get("type"), username=a.get("user"),
-                   outcome=a.get("outcome"), limit=int(a.get("limit", 100)))
+                   outcome=a.get("outcome"), limit=int(limit))
     c = container()
     chain = c.audit.verify_chain()
     return jsonify(
