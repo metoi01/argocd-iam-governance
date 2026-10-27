@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Applications{% endblock %}
+{% block heading %}Applications{% endblock %}
+{% block content %}
+<div class="toolbar">
+  <div class="summary">
+    <span><strong>{{ summary.total }}</strong> applications</span>
+    <span class="status-dot warn"></span><span><strong>{{ summary.out_of_sync }}</strong> out of sync</span>
+    <span class="status-dot err"></span><span><strong>{{ summary.degraded }}</strong> not healthy</span>
+  </div>
+  <form method="get" class="inline">
+    <select name="env" aria-label="Environment" data-autosubmit>
+      <option value="">All environments</option>
+      {% for e in environments %}<option value="{{ e }}" {{ 'selected' if env == e }}>{{ e }}</option>{% endfor %}
+    </select>
+  </form>
+</div>
+<p class="muted small">Backend: {{ backend }}</p>
+
+<div class="tiles">
+{% for row in rows %}{% set a = row.app %}
+  <article class="tile {{ 'tile-prod' if a.is_production }}">
+    <header>
+      <h3>{{ a.name }}</h3>
+      <span class="env env-{{ a.environment }}">{{ a.environment }}</span>
+    </header>
+    <dl>
+      <dt>Project</dt><dd>{{ a.project }}</dd>
+      <dt>Status</dt>
+      <dd>
+        <span class="badge health-{{ a.health_status|lower }}">{{ a.health_status }}</span>
+        <span class="badge sync-{{ a.sync_status|lower }}">{{ a.sync_status }}</span>
+      </dd>
+      <dt>Repository</dt><dd class="mono trunc" title="{{ a.repo_url }}">{{ a.repo_url.split('/')[-1] }} · {{ a.path }}</dd>
+      <dt>Destination</dt><dd class="mono trunc" title="{{ a.destination_server }}">{{ a.destination_namespace }}</dd>
+      <dt>Revision</dt><dd class="mono">{{ a.revision or '—' }}</dd>
+      <dt>Last sync</dt><dd>{% if a.last_synced_at %}{{ a.last_synced_at|dt }} by {{ a.last_synced_by }}{% else %}—{% endif %}</dd>
+    </dl>
+    <footer>
+      {% if row.can_sync %}
+      <form method="post" action="{{ url_for('apps.sync', name=a.name) }}"
+            {% if a.is_production %}data-confirm="Sync production application {{ a.name }}?"{% endif %}>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn btn-small" type="submit">Sync</button>
+      </form>
+      {% else %}
+      <span class="locked" title="Requires {{ row.needs.value }}">🔒 {{ 'Admin' if a.is_production else 'Operator' }} only</span>
+      <a class="btn btn-small btn-ghost" href="{{ url_for('apps.access') }}">Request access</a>
+      {% endif %}
+      {% if can_refresh %}
+      <form method="post" action="{{ url_for('apps.refresh', name=a.name) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn btn-small btn-ghost" type="submit">Refresh</button>
+      </form>
+      {% endif %}
+    </footer>
+  </article>
+{% else %}
+  <p class="muted">No applications match.</p>
+{% endfor %}
+</div>
+{% endblock %}

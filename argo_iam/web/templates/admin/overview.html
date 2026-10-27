@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}IAM overview{% endblock %}
+{% block heading %}IAM overview{% endblock %}
+{% block content %}
+<div class="stats">
+  <a class="stat" href="{{ url_for('admin.users') }}"><span>{{ stats.users }}</span>users<small>{{ stats.disabled }} disabled · {{ stats.locked }} locked · {{ stats.without_mfa }} without MFA</small></a>
+  <a class="stat" href="{{ url_for('admin.sessions') }}"><span>{{ stats.sessions }}</span>open sessions</a>
+  <a class="stat {{ 'stat-attn' if stats.pending }}" href="{{ url_for('admin.privileges') }}"><span>{{ stats.pending }}</span>pending elevation requests</a>
+  <a class="stat" href="{{ url_for('admin.privileges') }}"><span>{{ stats.active_grants }}</span>active temporary grants</a>
+  <a class="stat" href="{{ url_for('admin.audit', type='auth', outcome='failure') }}"><span>{{ stats.failed_logins }}</span>failed sign-in steps</a>
+  <a class="stat" href="{{ url_for('admin.audit', type='authz.denied') }}"><span>{{ stats.denied }}</span>access denials</a>
+</div>
+{% include "admin/_chain.html" %}
+<section class="card">
+  <h2>Recent security events</h2>
+  {% set events = recent %}
+  {% include "admin/_events.html" %}
+  <a class="btn btn-ghost btn-small" href="{{ url_for('admin.audit') }}">Open audit log</a>
+</section>
+{% endblock %}

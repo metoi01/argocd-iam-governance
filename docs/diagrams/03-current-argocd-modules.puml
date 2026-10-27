@@ -1,0 +1,58 @@
+@startuml 03-current-argocd-modules
+' Conceptual decomposition of the argoproj/argo-cd Go code base (Module view).
+' Package names follow the upstream repository layout; verify against the
+' release analysed in the final report.
+title Argo CD today — Module view (decomposition + uses)
+skinparam packageStyle folder
+skinparam shadowing false
+
+package "cmd" as cmd
+package "server" as server {
+  package "application" as s_app
+  package "project" as s_proj
+  package "session" as s_sess
+  package "account" as s_acc
+  package "cluster / repository" as s_clu
+  package "rbacpolicy" as s_rbac
+}
+package "reposerver" as reposerver
+package "controller" as controller
+package "applicationset" as applicationset
+package "notification_controller" as notif
+package "cmpserver" as cmp
+package "pkg" as pkg {
+  package "apis/application/v1alpha1" as apis
+  package "apiclient" as apiclient
+}
+package "util" as util {
+  package "rbac" as u_rbac
+  package "session" as u_sess
+  package "oidc / dex" as u_oidc
+  package "settings" as u_settings
+  package "db" as u_db
+  package "git / helm / kube" as u_src
+  package "cache" as u_cache
+}
+package "ui (React)" as ui
+
+cmd ..> server : <<uses>>
+cmd ..> reposerver
+cmd ..> controller
+cmd ..> applicationset
+cmd ..> notif
+server ..> u_rbac
+server ..> u_sess
+server ..> u_oidc
+server ..> u_settings
+server ..> u_db
+server ..> apis
+s_rbac ..> u_rbac
+controller ..> apis
+controller ..> u_cache
+controller ..> apiclient : repo-server client
+reposerver ..> u_src
+reposerver ..> u_cache
+reposerver ..> cmp
+applicationset ..> apis
+ui ..> apiclient : REST (generated)
+@enduml

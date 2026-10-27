@@ -1,0 +1,64 @@
+@startuml 11-proposed-modules
+title Proposed — Module view of the argo_iam package (allowed "uses" relations)
+skinparam packageStyle folder
+skinparam shadowing false
+
+package "argo_iam" {
+  package "web" as web <<presentation>>
+  package "argocd_adapter" as adapter <<integration>>
+  package "auth" as auth <<service>>
+  package "users" as users <<service>>
+  package "sessions" as sessions <<service>>
+  package "authorization" as authz <<service>>
+  package "privilege" as priv <<service>>
+  package "audit" as audit <<service>>
+  package "common / clock / config / db" as infra <<shared>>
+  package "container\n(composition root)" as container
+}
+
+web ..> auth
+web ..> users
+web ..> sessions
+web ..> priv
+web ..> authz
+web ..> audit
+web ..> adapter : via GovernedArgoCD only
+web ..> container
+container ..> auth
+container ..> users
+container ..> sessions
+container ..> authz
+container ..> priv
+container ..> audit
+container ..> adapter
+auth ..> sessions
+auth ..> users : repository
+users ..> sessions
+users ..> priv
+users ..> authz
+sessions ..> authz
+priv ..> authz
+authz ..> priv : repository (grants)
+adapter ..> authz
+adapter ..> audit
+auth ..> audit
+users ..> audit
+sessions ..> audit
+priv ..> audit
+authz ..> audit
+auth ..> infra
+users ..> infra
+sessions ..> infra
+authz ..> infra
+priv ..> infra
+audit ..> infra
+
+note bottom of infra
+  Rules enforced by tests/test_architecture.py:
+  * service modules never import flask / web
+  * service modules never import argocd_adapter
+  * only repository.py files use db / sqlite3
+  * only argocd_adapter/http.py performs network I/O
+  * web reaches Argo CD only through GovernedArgoCD
+end note
+@enduml

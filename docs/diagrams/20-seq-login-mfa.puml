@@ -1,0 +1,39 @@
+@startuml 20-seq-login-mfa
+title Login with password + TOTP
+autonumber
+actor User
+participant "Login UI\n(web.auth_views)" as UI
+participant "AuthenticationService" as Auth
+participant "UserRepository" as Users
+participant "TOTP" as TOTP
+participant "SessionManager" as Sess
+participant "AuditService" as Audit
+
+User -> UI : POST /login (username, password, csrf)
+UI -> Auth : begin_login()
+Auth -> Users : get_by_username()
+alt unknown user / wrong password
+  Auth -> Auth : constant-time dummy verify\nfailed_attempts++ (lock at 5)
+  Auth -> Audit : auth.login.failed / auth.account.locked
+  Auth --> UI : INVALID (generic message)
+else password ok
+  Auth -> Auth : issue MFA challenge\n(random token, 5 min, 5 attempts)
+  Auth -> Audit : auth.mfa.challenge_issued
+  Auth --> UI : MFA_REQUIRED + challenge token
+  UI --> User : 302 /login/mfa
+  User -> UI : POST /login/mfa (code)
+  UI -> Auth : verify_mfa(challenge, code)
+  Auth -> TOTP : verify(secret, code, now, last_step)
+  alt valid and not replayed
+    Auth -> Users : save(last_step, reset counters)
+    Auth -> Sess : create(user)
+    Sess -> Audit : session.created
+    Auth -> Audit : auth.mfa.succeeded, auth.login.succeeded
+    Auth --> UI : session token
+    UI --> User : Set-Cookie (HttpOnly, SameSite) → dashboard
+  else invalid
+    Auth -> Audit : auth.mfa.failed
+    Auth --> UI : retry or restart login
+  end
+end
+@enduml

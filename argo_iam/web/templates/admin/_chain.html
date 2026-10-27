@@ -1,0 +1,5 @@
+{% if chain.valid %}
+<div class="alert alert-success">Audit hash chain verified: {{ chain.checked }} events, no tampering detected.</div>
+{% else %}
+<div class="alert alert-error">Audit hash chain BROKEN at event #{{ chain.broken_at }} — records were modified or removed.</div>
+{% endif %}

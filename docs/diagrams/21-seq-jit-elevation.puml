@@ -1,0 +1,37 @@
+@startuml 21-seq-jit-elevation
+title Temporary privilege (JIT) request, approval and expiry
+autonumber
+actor "Operator\n(oscar)" as Op
+actor "Administrator\n(alice)" as Adm
+participant "web / api" as Web
+participant "PrivilegeService" as Priv
+participant "AuthorizationService" as Authz
+participant "PrivilegeRepository" as Repo
+participant "AuditService" as Audit
+
+Op -> Web : request Admin for 60 min + justification
+Web -> Priv : request(user, ADMIN, why, 60)
+Priv -> Authz : require(iam:privilege:request)
+Priv -> Priv : validate (higher role, 15–240 min,\njustification, one open request)
+Priv -> Repo : add(PENDING)
+Priv -> Audit : privilege.requested
+
+Adm -> Web : approve #1
+Web -> Priv : approve(admin, 1, note)
+Priv -> Authz : require(iam:privilege:approve)\n(permanent role only)
+Priv -> Priv : approver ≠ requester,\nstatus PENDING, role unchanged
+Priv -> Repo : save(ACTIVE, expires_at = now + 60 min)
+Priv -> Audit : privilege.approved
+
+== while active ==
+Op -> Web : any request
+Web -> Authz : profile(user)
+Authz -> Repo : active_grant_for_user(now)
+Authz --> Web : effective role = Admin\n(+ Argo CD permissions only)
+
+== after 60 minutes ==
+Web -> Priv : expire_due()  (every request)
+Priv -> Repo : save(EXPIRED)
+Priv -> Audit : privilege.expired (restored_role = operator)
+Authz --> Web : effective role = Operator
+@enduml

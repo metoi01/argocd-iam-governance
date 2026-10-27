@@ -1,0 +1,13 @@
+@startuml 23-state-privilege-request
+title PrivilegeRequest lifecycle
+[*] --> PENDING : request()
+PENDING --> ACTIVE : approve()\n[approver ≠ requester,\npermanent admin]
+PENDING --> REJECTED : reject(reason)
+PENDING --> CANCELLED : cancel() by requester\nor account change
+ACTIVE --> EXPIRED : now ≥ expires_at\n(expire_due sweep)
+ACTIVE --> REVOKED : revoke() by admin\nor account disabled / role changed
+REJECTED --> [*]
+CANCELLED --> [*]
+EXPIRED --> [*]
+REVOKED --> [*]
+@enduml

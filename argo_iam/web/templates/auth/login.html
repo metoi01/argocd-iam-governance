@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Sign in{% endblock %}
+{% block auth %}
+<h2>Sign in</h2>
+<p class="muted">Step 1 of 2 · Password</p>
+{% if error %}<div class="alert alert-error" role="alert">{{ error }}</div>{% endif %}
+<form method="post" action="{{ url_for('auth.login') }}" class="stack">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <label>Username
+    <input name="username" autocomplete="username" required autofocus value="{{ username or '' }}">
+  </label>
+  <label>Password
+    <input name="password" type="password" autocomplete="current-password" required>
+  </label>
+  <button class="btn btn-block" type="submit">Continue</button>
+</form>
+<ul class="auth-points">
+  <li>Every sign-in is verified with an authenticator code (TOTP).</li>
+  <li>Accounts lock for a while after repeated failures.</li>
+  <li>All sign-in activity is recorded in a tamper-evident audit log.</li>
+</ul>
+{% endblock %}

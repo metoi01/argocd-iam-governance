@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Elevation requests{% endblock %}
+{% block heading %}Elevation requests{% endblock %}
+{% block content %}
+<section class="card">
+  <h2>Pending approval</h2>
+  {% for r in pending %}{% set requester = users_by_id.get(r.requester_id) %}
+  <div class="request">
+    <div>
+      <strong>#{{ r.id }} · {{ requester.display_name if requester else r.requester_id }}</strong>
+      requests <span class="role role-{{ r.requested_role.value }}">{{ r.requested_role.label }}</span>
+      for <strong>{{ r.duration_minutes }} min</strong>
+      <span class="muted small">(currently {{ r.base_role.label }}, asked {{ r.created_at|dt }})</span>
+      <blockquote>{{ r.justification }}</blockquote>
+    </div>
+    {% if r.requester_id == current_user.id %}
+      <p class="muted small">Your own request — another administrator must decide.</p>
+    {% else %}
+    <div class="decide">
+      <form method="post" action="{{ url_for('admin.decide', request_id=r.id, decision='approve') }}" class="inline">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input name="note" placeholder="Note (optional)">
+        <button class="btn btn-small" type="submit">Approve</button>
+      </form>
+      <form method="post" action="{{ url_for('admin.decide', request_id=r.id, decision='reject') }}" class="inline">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input name="note" placeholder="Reason (required)" required>
+        <button class="btn btn-small btn-danger" type="submit">Reject</button>
+      </form>
+    </div>
+    {% endif %}
+  </div>
+  {% else %}
+  <p class="muted">Nothing waiting for approval.</p>
+  {% endfor %}
+</section>
+
+<section class="card">
+  <h2>Active temporary grants</h2>
+  <table class="table">
+    <thead><tr><th>#</th><th>User</th><th>Role</th><th>Expires</th><th>Remaining</th><th></th></tr></thead>
+    <tbody>
+    {% for r in active %}
+      <tr>
+        <td>{{ r.id }}</td>
+        <td>{{ users_by_id[r.requester_id].username }}</td>
+        <td>{{ r.base_role.label }} → <strong>{{ r.requested_role.label }}</strong></td>
+        <td class="small">{{ r.expires_at|dt }}</td>
+        <td><span data-expires="{{ r.remaining_seconds(now) }}">{{ r.remaining_seconds(now)|remaining }}</span></td>
+        <td>
+          <form method="post" action="{{ url_for('admin.decide', request_id=r.id, decision='revoke') }}" class="inline" data-confirm="Revoke this grant now?">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input name="note" placeholder="Reason">
+            <button class="btn btn-small btn-danger" type="submit">Revoke</button>
+          </form>
+        </td>
+      </tr>
+    {% else %}
+      <tr><td colspan="6" class="muted">No active grants.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+<section class="card">
+  <h2>History</h2>
+  {% set requests = history %}{% set show_requester = True %}
+  {% include "_requests_table.html" %}
+</section>
+{% endblock %}

@@ -1,0 +1,33 @@
+@startuml 13-proposed-deployment
+title Proposed — Deployment view
+skinparam shadowing false
+
+actor "Users / CI" as users
+
+node "Management Kubernetes cluster" {
+  node "namespace: argo-iam" {
+    artifact "argo-iam-gateway\n(Python / Flask, WSGI)\nDeployment" as gw
+    artifact "PersistentVolume\nor managed SQL\n(IAM store)" as pv
+    artifact "Secret: ARGO_IAM_SECRET_KEY,\nARGOCD_AUTH_TOKEN" as sec
+  }
+  node "namespace: argocd" {
+    artifact "argocd-server" as api
+    artifact "repo-server / controllers / redis" as core
+    artifact "argocd-rbac-cm\n(policy.csv generated\nby the IAM layer)" as rbac
+  }
+}
+
+users --> gw : HTTPS (Ingress, TLS)
+gw --> pv
+gw --> sec
+gw --> api : HTTPS, service-account bearer token\n(ClusterIP, in-cluster)
+api --> core
+api --> rbac
+
+note right of gw
+  Prototype: single process + SQLite.
+  Production: >1 replica requires a shared
+  database (PostgreSQL) — the repository layer
+  is the only code that changes.
+end note
+@enduml

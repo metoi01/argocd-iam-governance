@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Audit log{% endblock %}
+{% block heading %}Audit log{% endblock %}
+{% block content %}
+{% include "admin/_chain.html" %}
+<form method="get" class="filters">
+  <label>Event
+    <select name="type">
+      <option value="">All</option>
+      <optgroup label="Category">{% for c in categories %}<option value="{{ c }}" {{ 'selected' if filters.get('type') == c }}>{{ c }}.*</option>{% endfor %}</optgroup>
+      <optgroup label="Event type">{% for t in event_types %}<option value="{{ t.value }}" {{ 'selected' if filters.get('type') == t.value }}>{{ t.value }}</option>{% endfor %}</optgroup>
+    </select>
+  </label>
+  <label>User <input name="user" value="{{ filters.get('user', '') }}" placeholder="username"></label>
+  <label>Outcome
+    <select name="outcome"><option value="">All</option>{% for o in outcomes %}<option value="{{ o.value }}" {{ 'selected' if filters.get('outcome') == o.value }}>{{ o.value }}</option>{% endfor %}</select>
+  </label>
+  <button class="btn btn-small" type="submit">Filter</button>
+  <a class="btn btn-small btn-ghost" href="{{ url_for('admin.audit') }}">Reset</a>
+  <a class="btn btn-small btn-ghost" href="{{ url_for('admin.audit_csv', **filters) }}">Export CSV</a>
+</form>
+<section class="card">{% include "admin/_events.html" %}</section>
+{% endblock %}

@@ -1,0 +1,22 @@
+@startuml 12-proposed-layers
+title Proposed — Layered view
+skinparam shadowing false
+skinparam rectangle {
+  BackgroundColor<<layer>> #F4F7F9
+}
+
+rectangle "Presentation layer\nweb: auth_views, app_views, admin_views (Jinja templates), api (JSON)\nweb.security: session resolution, CSRF, decorators, headers" <<layer>> as L1
+rectangle "Service layer\nAuthenticationService · SessionManager · AuthorizationService\nPrivilegeService · UserService · AuditService · GovernedArgoCD" <<layer>> as L2
+rectangle "Domain model\nUser, Role, Session, PrivilegeRequest, AuditEvent, Permission" <<layer>> as L3
+rectangle "Data access (Repository pattern)\nUserRepository · SessionRepository · ChallengeRepository\nPrivilegeRepository · AuditRepository (append-only)" <<layer>> as L4
+rectangle "Integration (Adapter pattern)\nArgoCDAdapter ← MockArgoCDAdapter | ArgoCDHttpAdapter" <<layer>> as L5
+database "SQLite" as DB
+cloud "Argo CD API" as ARGO
+
+L1 -down-> L2
+L2 -down-> L3
+L2 -down-> L4
+L2 -down-> L5
+L4 -down-> DB
+L5 -down-> ARGO
+@enduml

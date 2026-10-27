@@ -1,0 +1,61 @@
+@startuml 10-proposed-cc
+title Proposed — IAM Governance Layer in front of Argo CD (C&C view)
+skinparam componentStyle rectangle
+skinparam shadowing false
+
+actor "User\n(browser)" as user
+actor "CLI / CI" as ci
+actor "Administrator" as admin
+
+package "Argo IAM Governance Layer (Python)" {
+  [Login UI / Dashboards\n(web)] as web
+  [IAM Gateway API\n(/api/v1)] as gw
+  [Authentication Service\n(auth)] as authn
+  [MFA (TOTP)\n(auth.totp)] as mfa
+  [Session Manager\n(sessions)] as sess
+  [Authorization Service\n(authorization)] as authz
+  [Privilege Service\n(privilege)] as priv
+  [Audit Service\n(audit)] as audit
+  [User Service\n(users)] as users
+  [GovernedArgoCD\n+ ArgoCDAdapter\n(argocd_adapter)] as adapter
+  database "IAM store\n(SQLite)\nusers, sessions,\nrequests, audit chain" as store
+}
+
+package "Existing Argo CD (unchanged)" {
+  [Argo CD API Server] as argo
+  [Repo Server / Controllers] as core
+}
+cloud "Identity Provider\n(future: OIDC federation)" as idp
+
+user --> web : HTTPS + session cookie\n(CSRF-protected forms)
+admin --> web
+ci --> gw : HTTPS + bearer token
+web --> authn
+gw --> authn
+authn --> mfa
+authn --> sess : create session
+web --> authz
+gw --> authz
+web --> priv
+gw --> priv
+web --> users
+authz --> priv : active grants\n(read)
+priv --> authz : approver check
+web --> adapter
+gw --> adapter
+adapter --> authz : require(permission)
+adapter --> argo : REST/gRPC-gateway\n(service account token)
+argo --> core
+authn --> audit
+sess --> audit
+authz --> audit : denials
+priv --> audit
+users --> audit
+adapter --> audit : sync / refresh / project update
+authn --> store
+sess --> store
+priv --> store
+users --> store
+audit --> store : append-only,\nhash-chained
+authn ..> idp : planned
+@enduml

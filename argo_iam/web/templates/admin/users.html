@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Users{% endblock %}
+{% block heading %}Users &amp; roles{% endblock %}
+{% block content %}
+<section class="card">
+  <h2>Users</h2>
+  <table class="table">
+    <thead><tr><th>User</th><th>Permanent role</th><th>Status</th><th>MFA</th><th>Last sign-in</th><th>Actions</th></tr></thead>
+    <tbody>
+    {% for u in users %}
+      <tr class="{{ 'ended' if not u.is_active }}">
+        <td><strong>{{ u.display_name }}</strong><br><small class="muted">@{{ u.username }} · {{ u.email }}</small></td>
+        <td>
+          <form method="post" action="{{ url_for('admin.change_role', user_id=u.id) }}" class="inline"
+                data-confirm="Change the role of {{ u.username }}? Their sessions will be ended.">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <select name="role">{% for r in roles %}<option value="{{ r.value }}" {{ 'selected' if r == u.role }}>{{ r.label }}</option>{% endfor %}</select>
+            <button class="btn btn-small btn-ghost" type="submit">Set</button>
+          </form>
+        </td>
+        <td>
+          <span class="status status-{{ u.status.value }}">{{ u.status.value }}</span>
+          {% if u.is_locked(now) %}<span class="status status-denied">locked</span>{% endif %}
+        </td>
+        <td>{% if u.mfa_enabled %}<span class="status status-success">enrolled</span>{% else %}<span class="status status-pending">not enrolled</span>{% endif %}</td>
+        <td class="small">{{ u.last_login_at|dt }}</td>
+        <td class="actions">
+          {% if u.id != current_user.id %}
+          <form method="post" action="{{ url_for('admin.change_status', user_id=u.id) }}"
+                data-confirm="{{ 'Disable' if u.is_active else 'Enable' }} {{ u.username }}?">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="status" value="{{ 'disabled' if u.is_active else 'active' }}">
+            <button class="btn btn-small {{ 'btn-danger' if u.is_active else 'btn-ghost' }}" type="submit">{{ 'Disable' if u.is_active else 'Enable' }}</button>
+          </form>
+          {% endif %}
+          {% if u.is_locked(now) or u.failed_attempts %}
+          <form method="post" action="{{ url_for('admin.unlock', user_id=u.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn btn-small btn-ghost" type="submit">Unlock</button>
+          </form>
+          {% endif %}
+          {% if u.mfa_enabled %}
+          <form method="post" action="{{ url_for('admin.reset_mfa', user_id=u.id) }}" data-confirm="Reset MFA for {{ u.username }}?">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn btn-small btn-ghost" type="submit">Reset MFA</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+<section class="card">
+  <h2>Create user</h2>
+  <form method="post" action="{{ url_for('admin.create_user') }}" class="form-grid">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label>Username <input name="username" required pattern="[a-z][a-z0-9._-]{2,31}"></label>
+    <label>Display name <input name="display_name" required></label>
+    <label>E-mail <input name="email" type="email" required></label>
+    <label>Initial password <input name="password" type="password" minlength="12" required autocomplete="new-password"></label>
+    <label>Role <select name="role">{% for r in roles %}<option value="{{ r.value }}">{{ r.label }}</option>{% endfor %}</select></label>
+    <button class="btn" type="submit">Create</button>
+  </form>
+  <p class="muted small">New users enrol an authenticator at their first sign-in. Passwords need 12+ characters mixing three character classes.</p>
+</section>
+{% endblock %}

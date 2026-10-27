@@ -1,0 +1,19 @@
+<table class="table events">
+  <thead><tr><th>#</th><th>Time</th><th>Event</th><th>Outcome</th><th>Actor</th><th>Target</th><th>Source</th><th>Details</th></tr></thead>
+  <tbody>
+  {% for e in events %}
+    <tr>
+      <td>{{ e.id }}</td>
+      <td class="small nowrap">{{ e.occurred_at|dt }}</td>
+      <td><code class="evt evt-{{ e.event_type.category }}">{{ e.event_type.value }}</code></td>
+      <td><span class="status status-{{ e.outcome.value }}">{{ e.outcome.value }}</span></td>
+      <td>{{ e.actor_username or '—' }}</td>
+      <td class="mono small">{{ e.target or '—' }}</td>
+      <td class="small">{{ e.channel }} · {{ e.ip }}</td>
+      <td class="small wrap">{% for k, v in e.details.items() if v is not none %}<span class="kvp">{{ k }}=<b>{{ v|join(", ") if v is iterable and v is not string else v }}</b></span> {% endfor %}</td>
+    </tr>
+  {% else %}
+    <tr><td colspan="8" class="muted">No events.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>

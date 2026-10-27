@@ -1,0 +1,60 @@
+@startuml 24-data-model
+title IAM store — data model
+hide circle
+skinparam linetype ortho
+
+entity users {
+  * id : int
+  --
+  username : text <<unique>>
+  display_name, email
+  password_hash : scrypt$n$r$p$salt$hash
+  role : viewer | operator | admin
+  status : active | disabled
+  mfa_secret, mfa_enabled, mfa_last_step
+  failed_attempts, locked_until
+  created_at, last_login_at
+}
+entity mfa_challenges {
+  * id : int
+  --
+  token_hash <<unique>>
+  user_id : FK
+  purpose : verify | enroll
+  pending_secret
+  expires_at, attempts, consumed
+}
+entity sessions {
+  * id : text (public)
+  --
+  token_hash <<unique>> (SHA-256)
+  user_id : FK
+  created_at, last_seen_at, expires_at
+  ended_at, end_reason, ended_by
+  ip, user_agent, channel
+}
+entity privilege_requests {
+  * id : int
+  --
+  requester_id : FK
+  base_role, requested_role
+  justification, duration_minutes
+  status
+  decided_by : FK, decided_at, decision_note
+  activated_at, expires_at, ended_at
+}
+entity audit_events {
+  * id : int
+  --
+  occurred_at, event_type, outcome
+  actor_id, actor_username, target
+  ip, channel, details (JSON)
+  prev_hash, hash (SHA-256 chain)
+}
+
+users ||--o{ mfa_challenges
+users ||--o{ sessions
+users ||--o{ privilege_requests : requests
+users |o--o{ privilege_requests : decides
+users |o--o{ audit_events : acts
+@enduml

@@ -1,0 +1,35 @@
+@startuml 02-current-argocd-deployment
+title Argo CD today — Deployment view
+skinparam shadowing false
+
+node "Management Kubernetes cluster" {
+  node "namespace: argocd" {
+    artifact "argocd-server\n(Deployment)" as api
+    artifact "argocd-repo-server\n(Deployment)" as repo
+    artifact "argocd-application-controller\n(StatefulSet, sharded)" as ctrl
+    artifact "argocd-applicationset-controller\n(Deployment)" as appset
+    artifact "argocd-notifications-controller\n(Deployment)" as notif
+    artifact "argocd-redis\n(Deployment / HA)" as redis
+    artifact "argocd-dex-server\n(Deployment, optional)" as dex
+    collections "ConfigMaps / Secrets\nargocd-cm, argocd-rbac-cm,\ncluster & repo credentials" as cfg
+  }
+  node "kube-apiserver" as kapi
+}
+
+node "Workload cluster(s)" as remote
+cloud "Git hosting" as git
+cloud "Identity provider" as idp
+actor "Users / CI" as users
+
+users --> api : HTTPS (Ingress / LoadBalancer)
+api --> cfg
+ctrl --> kapi
+ctrl --> remote : K8s API (cluster secret)
+repo --> git
+dex --> idp
+api --> repo
+ctrl --> repo
+api --> redis
+ctrl --> redis
+repo --> redis
+@enduml

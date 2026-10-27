@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Active sessions{% endblock %}
+{% block heading %}Active sessions{% endblock %}
+{% block content %}
+<section class="card">
+  <table class="table">
+    <thead><tr><th>Session</th><th>User</th><th>Channel</th><th>IP</th><th>Started</th><th>Last seen</th><th>Absolute expiry</th><th></th></tr></thead>
+    <tbody>
+    {% for s in sessions %}
+      <tr>
+        <td class="mono">{{ s.id }}{% if s.id == g.session.id %} <span class="pill pill-accent">you</span>{% endif %}</td>
+        <td>{{ users_by_id[s.user_id].username if s.user_id in users_by_id else s.user_id }}</td>
+        <td>{{ s.channel }}</td>
+        <td class="mono">{{ s.ip }}</td>
+        <td class="small">{{ s.created_at|dt }}</td>
+        <td class="small">{{ s.last_seen_at|dt }}</td>
+        <td class="small">{{ s.expires_at|dt }}</td>
+        <td>
+          <form method="post" action="{{ url_for('admin.revoke_session', session_id=s.id) }}" data-confirm="Revoke session {{ s.id }}?">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn btn-small btn-danger" type="submit">Revoke</button>
+          </form>
+        </td>
+      </tr>
+    {% else %}
+      <tr><td colspan="8" class="muted">No open sessions.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  <p class="muted small">Sessions that passed their idle or absolute timeout are closed the next time they are used.</p>
+</section>
+{% endblock %}

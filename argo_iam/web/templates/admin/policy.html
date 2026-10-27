@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Argo CD RBAC{% endblock %}
+{% block heading %}Argo CD RBAC translation{% endblock %}
+{% block content %}
+<section class="card">
+  <h2>Role → permission matrix</h2>
+  <table class="table matrix">
+    <thead><tr><th>Permission</th>{% for r in roles %}<th>{{ r.label }}</th>{% endfor %}{% for r in roles %}<th class="muted">JIT {{ r.label }}</th>{% endfor %}</tr></thead>
+    <tbody>
+    {% for perm, permanent, elevatable in matrix %}
+      <tr><td><code>{{ perm.value }}</code></td>
+        {% for v in permanent %}<td class="{{ 'yes' if v else 'no' }}">{{ '✓' if v else '·' }}</td>{% endfor %}
+        {% for v in elevatable %}<td class="{{ 'yes' if v else 'no' }}">{{ '✓' if v else '·' }}</td>{% endfor %}
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  <p class="muted small">“JIT” columns show what a temporary grant of that role confers: Argo CD permissions only, never IAM governance permissions.</p>
+</section>
+<section class="card">
+  <h2>Generated <code>policy.csv</code> for <code>argocd-rbac-cm</code></h2>
+  <pre class="code">{{ policy_csv }}</pre>
+</section>
+{% endblock %}

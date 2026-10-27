@@ -1,0 +1,29 @@
+@startuml 22-seq-governed-sync
+title Privileged operation: syncing a production application
+autonumber
+actor User
+participant "web / api" as Web
+participant "GovernedArgoCD" as Gov
+participant "AuthorizationService" as Authz
+participant "ArgoCDAdapter\n(Mock | Http)" as Adapter
+participant "Argo CD API Server" as Argo
+participant "AuditService" as Audit
+
+User -> Web : POST /applications/guestbook-prod/sync
+Web -> Gov : sync(user, name)
+Gov -> Authz : require(applications:get)
+Gov -> Adapter : get_application(name)
+Adapter -> Argo : GET /api/v1/applications/{name}
+Gov -> Gov : environment = production\n→ needs applications:sync:production
+Gov -> Authz : require(applications:sync:production)
+alt denied
+  Authz -> Audit : authz.denied
+  Authz --> Web : PermissionDenied → 403\n("request elevation")
+else allowed
+  Gov -> Adapter : sync_application(name, initiated_by=user)
+  Adapter -> Argo : POST /api/v1/applications/{name}/sync
+  Argo --> Adapter : operationState
+  Gov -> Audit : argocd.application.sync\n(effective_role, elevated, privilege_request)
+  Gov --> Web : SyncResult
+end
+@enduml

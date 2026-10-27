@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}My sessions{% endblock %}
+{% block heading %}My sessions{% endblock %}
+{% block content %}
+<section class="card">
+  <p class="muted">Sessions end after {{ idle_minutes }} minutes of inactivity or at their absolute expiry. Revoke any session you do not recognise.</p>
+  <table class="table">
+    <thead><tr><th>Session</th><th>Channel</th><th>IP</th><th>Client</th><th>Started</th><th>Last seen</th><th>Expires / ended</th><th></th></tr></thead>
+    <tbody>
+    {% for s in sessions %}
+      <tr class="{{ 'ended' if s.is_ended }}">
+        <td class="mono">{{ s.id }}{% if s.id == g.session.id %} <span class="pill pill-accent">this</span>{% endif %}</td>
+        <td>{{ s.channel }}</td>
+        <td class="mono">{{ s.ip }}</td>
+        <td class="trunc small" title="{{ s.user_agent }}">{{ s.user_agent }}</td>
+        <td class="small">{{ s.created_at|dt }}</td>
+        <td class="small">{{ s.last_seen_at|dt }}</td>
+        <td class="small">{% if s.is_ended %}<span class="status status-ended">{{ s.end_reason.value }}</span> {{ s.ended_at|dt }}{% else %}{{ s.expires_at|dt }}{% endif %}</td>
+        <td>{% if not s.is_ended %}
+          <form method="post" action="{{ url_for('apps.revoke_my_session', session_id=s.id) }}" data-confirm="Revoke this session?">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn btn-small btn-danger" type="submit">Revoke</button>
+          </form>{% endif %}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

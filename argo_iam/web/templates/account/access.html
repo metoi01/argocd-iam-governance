@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Access{% endblock %}
+{% block heading %}Access &amp; elevation{% endblock %}
+{% block content %}
+<div class="grid-2">
+  <section class="card">
+    <h2>Current access</h2>
+    <dl class="kv">
+      <dt>Permanent role</dt><dd><span class="role role-{{ access.base_role.value }}">{{ access.base_role.label }}</span></dd>
+      <dt>Effective role</dt><dd><span class="role role-{{ access.effective_role.value }}">{{ access.effective_role.label }}</span></dd>
+      {% if access.grant %}
+      <dt>Temporary grant</dt>
+      <dd>Request #{{ access.grant.id }} · expires {{ access.grant.expires_at|dt }}
+        (<span data-expires="{{ access.grant.remaining_seconds(now) }}">{{ access.grant.remaining_seconds(now)|remaining }}</span> left)</dd>
+      {% endif %}
+    </dl>
+    <h4>Effective permissions</h4>
+    <ul class="perm-list">
+      {% for p in all_permissions %}
+      <li class="{{ 'yes' if p in access.permissions else 'no' }}"><code>{{ p.value }}</code></li>
+      {% endfor %}
+    </ul>
+    <p class="muted small">Temporary elevation only adds Argo CD permissions. IAM administration (approvals, users, audit) always requires a permanent administrator.</p>
+  </section>
+
+  <section class="card">
+    <h2>Request temporary elevation</h2>
+    {% if not requestable %}
+      <p class="muted">You already hold the highest role.</p>
+    {% elif open_request %}
+      <p>You have an open request (#{{ open_request.id }}, <span class="status status-{{ open_request.status.value }}">{{ open_request.status.value }}</span>). Only one request can be open at a time.</p>
+    {% else %}
+    <form method="post" action="{{ url_for('apps.request_privilege') }}" class="stack">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label>Role
+        <select name="role" required>
+          {% for r in requestable %}<option value="{{ r.value }}">{{ r.label }}</option>{% endfor %}
+        </select>
+      </label>
+      <label>Duration
+        <select name="duration" required>
+          {% for d in durations %}<option value="{{ d }}" {{ 'selected' if d == 60 }}>{{ d }} minutes</option>{% endfor %}
+        </select>
+      </label>
+      <label>Justification
+        <textarea name="justification" rows="3" minlength="{{ min_justification }}" required
+          placeholder="e.g. Roll out hotfix 2.4.1 to guestbook-prod for incident INC-1042"></textarea>
+      </label>
+      <button class="btn" type="submit">Submit for approval</button>
+    </form>
+    <p class="muted small">An administrator other than you must approve. Access starts at approval and ends automatically.</p>
+    {% endif %}
+  </section>
+</div>
+
+<section class="card">
+  <h2>My requests</h2>
+  {% set actions = True %}
+  {% include "_requests_table.html" %}
+</section>
+{% endblock %}

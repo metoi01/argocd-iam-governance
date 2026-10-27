@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Error {{ status }}{% endblock %}
+{% block heading %}{{ 'Access denied' if status == 403 else 'Something went wrong' }}{% endblock %}
+{% block content %}
+<section class="card error-card">
+  <p class="error-code">{{ status }}</p>
+  <p>{{ message }}</p>
+  {% if status == 403 and current_user %}
+  <p class="muted">Denials are recorded in the audit log. If you need this temporarily, request elevation.</p>
+  <a class="btn" href="{{ url_for('apps.access') }}">Request elevated access</a>
+  {% endif %}
+  <a class="btn btn-ghost" href="{{ url_for('apps.applications') }}">Back to applications</a>
+</section>
+{% endblock %}
+{% block auth %}
+<p class="error-code">{{ status }}</p>
+<p>{{ message }}</p>
+<a class="btn btn-block" href="{{ url_for('auth.login') }}">Go to sign in</a>
+{% endblock %}

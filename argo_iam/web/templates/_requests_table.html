@@ -1,0 +1,27 @@
+<table class="table">
+  <thead><tr><th>#</th>{% if show_requester %}<th>Requester</th>{% endif %}<th>Role</th><th>Duration</th><th>Justification</th><th>Status</th><th>Decided by</th><th>Window</th>{% if actions %}<th></th>{% endif %}</tr></thead>
+  <tbody>
+  {% for r in requests %}
+    <tr>
+      <td>{{ r.id }}</td>
+      {% if show_requester %}<td>{{ users_by_id[r.requester_id].username if r.requester_id in users_by_id else r.requester_id }}</td>{% endif %}
+      <td>{{ r.base_role.label }} → <strong>{{ r.requested_role.label }}</strong></td>
+      <td>{{ r.duration_minutes }} min</td>
+      <td class="wrap">{{ r.justification }}{% if r.decision_note %}<br><small class="muted">Note: {{ r.decision_note }}</small>{% endif %}</td>
+      <td><span class="status status-{{ r.status.value }}">{{ r.status.value }}</span></td>
+      <td>{{ users_by_id[r.decided_by].username if r.decided_by in users_by_id else '—' }}</td>
+      <td class="small">{% if r.activated_at %}{{ r.activated_at|dt }}<br>→ {{ r.expires_at|dt }}{% else %}requested {{ r.created_at|dt }}{% endif %}</td>
+      {% if actions %}<td>
+        {% if r.status.value == 'pending' and r.requester_id == current_user.id %}
+        <form method="post" action="{{ url_for('apps.cancel_request', request_id=r.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="btn btn-small btn-ghost" type="submit">Cancel</button>
+        </form>
+        {% endif %}
+      </td>{% endif %}
+    </tr>
+  {% else %}
+    <tr><td colspan="9" class="muted">No requests yet.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>

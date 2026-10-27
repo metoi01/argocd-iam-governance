@@ -1,0 +1,53 @@
+@startuml 01-current-argocd-cc
+' Current Argo CD architecture - Component & Connector view (runtime)
+title Argo CD today — Component & Connector view
+skinparam componentStyle rectangle
+skinparam shadowing false
+left to right direction
+
+actor "User" as user
+actor "CI system" as ci
+
+package "Clients" {
+  [Web UI] as ui
+  [argocd CLI] as cli
+}
+
+package "Argo CD (namespace argocd)" {
+  [API Server] as api
+  [Repository Server] as repo
+  [Application Controller] as ctrl
+  [ApplicationSet Controller] as appset
+  [Notifications Controller] as notif
+  database "Redis\n(cache)" as redis
+  [Dex] as dex
+}
+
+cloud "Git / Helm / OCI\nrepositories" as git
+cloud "External IdP\n(OIDC / SAML / LDAP)" as idp
+node "Target Kubernetes\nclusters (K8s API)" as k8s
+
+user --> ui : HTTPS
+user --> cli
+ci --> cli
+ui --> api : HTTPS / REST + gRPC-web
+cli --> api : gRPC / REST\n(bearer JWT)
+
+api --> dex : OIDC
+dex --> idp : OIDC / SAML / LDAP
+api ..> idp : direct OIDC\n(alternative)
+api --> repo : gRPC
+api --> k8s : K8s API\n(Application CRs, RBAC ConfigMaps)
+api --> redis
+
+repo --> git : git / https / OCI
+repo --> redis : manifest cache
+
+ctrl --> repo : gRPC\n(desired state)
+ctrl --> k8s : watch + apply\n(live state)
+ctrl --> redis
+
+appset --> k8s : create Applications
+appset --> repo : generators
+notif --> k8s : watch Applications
+@enduml

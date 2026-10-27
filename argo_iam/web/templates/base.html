@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Argo IAM{% endblock %} · Argo IAM Governance</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script src="{{ url_for('static', filename='app.js') }}" defer></script>
+</head>
+<body class="{% if current_user %}shell{% else %}bare{% endif %}">
+{% if current_user %}
+  <aside class="sidebar">
+    <a class="brand" href="{{ url_for('apps.applications') }}">
+      {% include "_logo.html" %}
+      <span><strong>argo</strong> IAM<small>Governance layer</small></span>
+    </a>
+    <nav>
+      <p class="nav-label">Delivery</p>
+      <a href="{{ url_for('apps.applications') }}" class="{{ 'active' if request.endpoint == 'apps.applications' }}">Applications</a>
+      <a href="{{ url_for('apps.projects') }}" class="{{ 'active' if request.endpoint == 'apps.projects' }}">Projects</a>
+      <p class="nav-label">My account</p>
+      <a href="{{ url_for('apps.access') }}" class="{{ 'active' if request.endpoint == 'apps.access' }}">Access &amp; elevation
+        {% if access.is_elevated %}<span class="pill pill-warn">JIT</span>{% endif %}</a>
+      <a href="{{ url_for('apps.my_sessions') }}" class="{{ 'active' if request.endpoint == 'apps.my_sessions' }}">My sessions</a>
+      {% if P.AUDIT_READ in access.permissions %}
+      <p class="nav-label">Administration</p>
+      <a href="{{ url_for('admin.overview') }}" class="{{ 'active' if request.endpoint == 'admin.overview' }}">IAM overview</a>
+      <a href="{{ url_for('admin.users') }}" class="{{ 'active' if request.endpoint == 'admin.users' }}">Users &amp; roles</a>
+      <a href="{{ url_for('admin.privileges') }}" class="{{ 'active' if request.endpoint == 'admin.privileges' }}">Elevation requests
+        {% if pending_count %}<span class="pill pill-accent">{{ pending_count }}</span>{% endif %}</a>
+      <a href="{{ url_for('admin.sessions') }}" class="{{ 'active' if request.endpoint == 'admin.sessions' }}">Active sessions</a>
+      <a href="{{ url_for('admin.audit') }}" class="{{ 'active' if request.endpoint == 'admin.audit' }}">Audit log</a>
+      <a href="{{ url_for('admin.argocd_policy') }}" class="{{ 'active' if request.endpoint == 'admin.argocd_policy' }}">Argo CD RBAC</a>
+      {% endif %}
+    </nav>
+  </aside>
+  <div class="main">
+    <header class="topbar">
+      <h1>{% block heading %}{% endblock %}</h1>
+      <div class="identity">
+        {% if access.is_elevated %}
+          <span class="role role-elevated" title="Temporary elevation from request #{{ access.grant.id }}">
+            {{ access.effective_role.label }} (temporary) ·
+            <span data-expires="{{ access.grant.remaining_seconds(now) }}">{{ access.grant.remaining_seconds(now)|remaining }}</span> left
+          </span>
+        {% else %}
+          <span class="role role-{{ access.effective_role.value }}">{{ access.effective_role.label }}</span>
+        {% endif %}
+        <span class="who">{{ current_user.display_name }} <small>@{{ current_user.username }}</small></span>
+        <form method="post" action="{{ url_for('auth.logout') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="btn btn-ghost" type="submit">Sign out</button>
+        </form>
+      </div>
+    </header>
+    <main class="content">
+      {% include "_flashes.html" %}
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+{% else %}
+  <main class="auth-wrap">
+    <div class="auth-card">
+      <div class="auth-brand">
+        {% include "_logo.html" %}
+        <div><strong>argo</strong> IAM Governance<small>Access layer for Argo CD</small></div>
+      </div>
+      {% include "_flashes.html" %}
+      {% block auth %}{% endblock %}
+    </div>
+    <p class="auth-foot">Prototype · CS411 Software Architecture</p>
+  </main>
+{% endif %}
+</body>
+</html>
