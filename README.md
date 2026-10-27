@@ -154,6 +154,14 @@ detection, the mock and HTTP Argo CD adapters, full browser and API flows, and
 **architecture conformance** (`tests/test_architecture.py` enforces the module
 dependency rules from the architecture document).
 
+## Known limitations
+
+* The session cookie `Secure` flag is off by default for local HTTP demos. Set `ARGO_IAM_COOKIE_SECURE=1` behind HTTPS.
+* The audit page, the admin overview and `GET /api/v1/audit` verify the whole hash chain on every request. With about 20,000 events a request takes roughly 2.7 seconds, and the cost grows linearly.
+* The audit hash chain does not detect deletion of the newest entries. Anchoring the head hash outside the database would close this gap (see [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)).
+* Password hashing uses `hashlib.scrypt`, so Python must be built against OpenSSL. The macOS system Python 3.9 lacks it. Use a Homebrew or python.org build.
+* The HTTP adapter is tested with a fake transport, not a live Argo CD.
+
 ## Scope
 
 This is a course prototype. It is not hardened for production use: see
