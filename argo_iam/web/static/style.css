@@ -308,3 +308,9 @@ label { display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-
 @media (prefers-reduced-motion: reduce) {
   * { scroll-behavior: auto !important; }
 }
+
+/* Controls inside labels keep regular weight; action cells stay table cells. */
+input, select, textarea { font-weight: 400; }
+.table td.actions { display: table-cell; white-space: nowrap; }
+.table td.actions > * { display: inline-block; margin: 0 var(--s1) var(--s1) 0; vertical-align: top; }
+.card p.small, .card .small:not(td):not(span) { margin-top: var(--s2); }
