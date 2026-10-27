@@ -201,6 +201,13 @@ def audit():
     )
 
 
+def _csv_safe(value):
+    """Stop spreadsheets from evaluating a cell as a formula (CSV output only)."""
+    if isinstance(value, str) and value.startswith(("=", "+", "-", "@", "\t", "\r")):
+        return "'" + value
+    return value
+
+
 @bp.route("/audit.csv")
 @permission_required(Permission.AUDIT_READ)
 def audit_csv():
@@ -210,9 +217,10 @@ def audit_csv():
     writer.writerow(["id", "occurred_at", "event_type", "outcome", "actor", "target", "ip",
                      "channel", "details", "hash"])
     for e in events:
-        writer.writerow([e.id, e.occurred_at.isoformat(), e.event_type.value, e.outcome.value,
-                         e.actor_username or "", e.target or "", e.ip, e.channel,
-                         json.dumps(e.details, sort_keys=True), e.hash])
+        writer.writerow([_csv_safe(v) for v in (
+            e.id, e.occurred_at.isoformat(), e.event_type.value, e.outcome.value,
+            e.actor_username or "", e.target or "", e.ip, e.channel,
+            json.dumps(e.details, sort_keys=True), e.hash)])
     return Response(out.getvalue(), mimetype="text/csv",
                     headers={"Content-Disposition": "attachment; filename=audit.csv"})
 
