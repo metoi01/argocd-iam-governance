@@ -102,7 +102,13 @@ def set_security_headers(response):
 
 def safe_next(target: Optional[str]) -> Optional[str]:
     """Only allow local absolute paths as post-login redirects."""
-    if target and target.startswith("/") and not target.startswith("//") and "\\" not in target:
+    if (
+        target
+        and target.startswith("/")
+        and not target.startswith("//")
+        and "\\" not in target
+        and not any(ord(ch) < 0x20 or ord(ch) == 0x7F for ch in target)
+    ):
         return target
     return None
 
