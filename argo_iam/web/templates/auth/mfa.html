@@ -1,16 +1,18 @@
 {% extends "base.html" %}
 {% block title %}Verify{% endblock %}
 {% block auth %}
+{% set step = 2 %}{% include "auth/_stepper.html" %}
 <h2>Two-factor verification</h2>
-<p class="muted">Step 2 of 2 · Signed in as <strong>{{ user.username }}</strong></p>
+<p class="lead">Step 2 of 2 · Signed in as <strong>{{ user.username }}</strong></p>
 {% if error %}<div class="alert alert-error" role="alert">{{ error }}</div>{% endif %}
 <form method="post" action="{{ url_for('auth.mfa') }}" class="stack">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <label>6-digit code from your authenticator app
     <input name="code" class="otp" inputmode="numeric" pattern="[0-9 ]{6,7}" maxlength="7"
-           autocomplete="one-time-code" required autofocus placeholder="123 456">
+           autocomplete="one-time-code" required autofocus placeholder="123 456"
+           {% if error %}aria-invalid="true"{% endif %}>
   </label>
   <button class="btn btn-block" type="submit">Verify and sign in</button>
 </form>
-<p class="muted small"><a href="{{ url_for('auth.login') }}">Use a different account</a></p>
+<p class="auth-alt"><a href="{{ url_for('auth.login') }}">Use a different account</a></p>
 {% endblock %}

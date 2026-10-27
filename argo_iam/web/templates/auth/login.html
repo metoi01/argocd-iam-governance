@@ -1,22 +1,25 @@
 {% extends "base.html" %}
 {% block title %}Sign in{% endblock %}
 {% block auth %}
+{% set step = 1 %}{% include "auth/_stepper.html" %}
 <h2>Sign in</h2>
-<p class="muted">Step 1 of 2 · Password</p>
+<p class="lead">Step 1 of 2 · Password</p>
 {% if error %}<div class="alert alert-error" role="alert">{{ error }}</div>{% endif %}
 <form method="post" action="{{ url_for('auth.login') }}" class="stack">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <label>Username
-    <input name="username" autocomplete="username" required autofocus value="{{ username or '' }}">
+    <input name="username" autocomplete="username" required autofocus value="{{ username or '' }}"
+           {% if error %}aria-invalid="true"{% endif %}>
   </label>
   <label>Password
-    <input name="password" type="password" autocomplete="current-password" required>
+    <input name="password" type="password" autocomplete="current-password" required
+           {% if error %}aria-invalid="true"{% endif %}>
   </label>
   <button class="btn btn-block" type="submit">Continue</button>
 </form>
 <ul class="auth-points">
-  <li>Every sign-in is verified with an authenticator code (TOTP).</li>
-  <li>Accounts lock for a while after repeated failures.</li>
-  <li>All sign-in activity is recorded in a tamper-evident audit log.</li>
+  <li>{% include "_icon_lock.html" %}<span>Every sign-in is verified with an authenticator code (TOTP).</span></li>
+  <li>{% include "_icon_lock.html" %}<span>Accounts lock for a while after repeated failures.</span></li>
+  <li>{% include "_icon_lock.html" %}<span>All sign-in activity is recorded in a tamper-evident audit log.</span></li>
 </ul>
 {% endblock %}
