@@ -10,7 +10,7 @@
       <td>{{ e.actor_username or '—' }}</td>
       <td class="mono small">{{ e.target or '—' }}</td>
       <td class="small">{{ e.channel }} · {{ e.ip }}</td>
-      <td class="small wrap">{% for k, v in e.details.items() if v is not none %}<span class="kvp">{{ k }}=<b>{{ v|join(", ") if v is iterable and v is not string else v }}</b></span> {% endfor %}</td>
+      <td class="small details">{% for k, v in e.details.items() if v is not none %}<span class="kvp">{{ k }}=<b>{{ v|join(", ") if v is iterable and v is not string else v }}</b></span> {% endfor %}</td>
     </tr>
   {% else %}
     <tr><td colspan="8" class="muted">No events.</td></tr>

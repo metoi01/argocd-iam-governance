@@ -314,3 +314,8 @@ input, select, textarea { font-weight: 400; }
 .table td.actions { display: table-cell; white-space: nowrap; }
 .table td.actions > * { display: inline-block; margin: 0 var(--s1) var(--s1) 0; vertical-align: top; }
 .card p.small, .card .small:not(td):not(span) { margin-top: var(--s2); }
+
+/* Audit events: the details column gets room; pairs wrap between, not inside, words. */
+.events td.details { min-width: 320px; white-space: normal; word-break: normal; overflow-wrap: break-word; }
+.events .kvp { display: inline-block; max-width: 100%; margin: 0 var(--s2) 2px 0; overflow-wrap: break-word; }
+.events td:nth-child(7) { white-space: nowrap; }
